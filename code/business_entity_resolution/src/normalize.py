@@ -16,6 +16,7 @@ Usage: python -m src.normalize [--work-dir W] [--sample N] [--workers K]
 """
 import argparse
 import json
+import multiprocessing
 import os
 import re
 import time
@@ -181,7 +182,9 @@ def run(work, workers, chunk=250_000):
         tl_path.write_text(json.dumps(translit.fit(work), ensure_ascii=False), encoding="utf-8")
     table = json.loads(tl_path.read_text(encoding="utf-8"))
     print("transliteration dictionary:", len(table), flush=True)
-    with ProcessPoolExecutor(workers, initializer=_init, initargs=(learned, table)) as ex:
+    # spawn, not fork: forking after Polars started its thread pool can deadlock (Linux/Kaggle)
+    ctx = multiprocessing.get_context("spawn")
+    with ProcessPoolExecutor(workers, mp_context=ctx, initializer=_init, initargs=(learned, table)) as ex:
         for split in config.SPLITS:
             for s in config.SOURCES:
                 out = out_dir / f"{split}_s{s}.parquet"

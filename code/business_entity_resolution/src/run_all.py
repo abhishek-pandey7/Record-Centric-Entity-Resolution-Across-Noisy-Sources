@@ -14,7 +14,7 @@ import time
 def sh(args, env):
     print(f"\n=== {' '.join(args)}", flush=True)
     t = time.time()
-    subprocess.run([sys.executable, "-m", *args], check=True, env=env)
+    subprocess.run([sys.executable, "-u", "-m", *args], check=True, env=env)
     print(f"=== done in {time.time() - t:.0f}s", flush=True)
 
 
