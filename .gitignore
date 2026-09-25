@@ -1,0 +1,13 @@
+student_resource/dataset/
+*.zip
+__MACOSX/
+work/
+output/
+submissions/*/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.pdf
+student_resource/
+*.tsv
+*.parquet
