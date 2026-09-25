@@ -11,3 +11,4 @@ __pycache__/
 student_resource/
 *.tsv
 *.parquet
+kaggle_upload/
