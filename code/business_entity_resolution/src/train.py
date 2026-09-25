@@ -35,7 +35,7 @@ def main():
     raw, feat_dir, model_dir = work / "raw", work / "feat", work / "model"
     feat_dir.mkdir(exist_ok=True); model_dir.mkdir(exist_ok=True)
     t = time.time()
-    fpath = feat_dir / f"train_k{a.k}_tf{a.train_folds}.parquet"
+    fpath = feat_dir / f"train_v3_k{a.k}_tf{a.train_folds}.parquet"
     if not fpath.exists():
         # Keep val entities in full + a fraction of train entities (folds 3..3+train_folds-1 of 20).
         folds0 = pl.read_parquet(raw / "train_s1_folds.parquet")
@@ -43,7 +43,7 @@ def main():
         sub = (pl.read_parquet(a.cand).filter(pl.col("rank") <= a.k).join(keep.select("s1"), on="s1", how="semi"))
         sub_path = work / "cand" / f"train_sub_k{a.k}_tf{a.train_folds}.parquet"
         sub.write_parquet(sub_path)
-        features.featurize(work, "train", sub_path, fpath)
+        features.featurize(work, "train", sub_path, fpath, full_cand_path=a.cand)
     df = label(pl.read_parquet(fpath), raw)
     folds = data.load_folds(raw)
     df = df.join(folds.select("s1", "is_val"), on="s1")

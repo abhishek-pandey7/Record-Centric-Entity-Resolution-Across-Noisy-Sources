@@ -11,6 +11,8 @@ import polars as pl
 from rapidfuzz import fuzz, process
 from rapidfuzz.distance import Indel, JaroWinkler
 
+from . import context
+
 KEYS = ["src", "rid", "s1"]
 NORM_COLS = ["rid", "src", "country", "name_norm", "name_concat", "legal", "is_domain", "is_indic",
              "addr_norm", "nums", "state", "addr_empty"]
@@ -92,20 +94,24 @@ def pair_features(c: pl.DataFrame, rec: pl.DataFrame, s1: pl.DataFrame, stats) -
         (pl.col("src") == 3).cast(pl.Int8).alias("is_s3"),
     )
     df = df.join(common.rename({"name_norm": "e_name_norm", "country": "e_country"}), on=["e_country", "e_name_norm"], how="left")
+    df = pl.concat([df, context.number_features(df["nums"].to_list(), df["e_nums"].to_list())], how="horizontal")
     feats = [k for k in df.columns if k not in NORM_COLS and not k.startswith("e_") and not k.startswith("_")
              and k not in ("s1",)] + ["name_common", "is_domain", "is_indic", "addr_empty"]
     return df.select(KEYS + [k for k in dict.fromkeys(feats) if k not in KEYS])
 
 
-def featurize(work, split: str, cand_path, out_path, chunk=1_500_000):
-    """Compute features for every candidate pair, chunked by record so per-record context stays intact."""
+def featurize(work, split: str, cand_path, out_path, full_cand_path=None, chunk=1_500_000):
+    """Compute features for every candidate pair, chunked by record so per-record context stays intact.
+    full_cand_path: the complete blocking output (all records), used to find each S1's siblings (rank-1 records)."""
     import time
     norm = work / "norm"
     t = time.time()
     cand = pl.read_parquet(cand_path).sort("src", "rid", "rank")
     s1 = pl.read_parquet(norm / f"{split}_s1.parquet")
     stats = s1_stats(s1)
-    need = cand.select("src", "rid").unique()
+    rank1 = (pl.read_parquet(full_cand_path or cand_path, columns=["src", "rid", "s1", "rank"])
+             .filter(pl.col("rank") == 1).drop("rank").join(cand.select("s1").unique(), on="s1", how="semi"))
+    need = pl.concat([cand.select("src", "rid"), rank1.select("src", "rid")]).unique()
     rec = pl.concat([pl.read_parquet(norm / f"{split}_s{s}.parquet").join(need, on=["src", "rid"], how="semi") for s in (2, 3)])
     s1 = s1.join(cand.select(pl.col("s1").alias("rid")).unique(), on="rid", how="semi")
     # chunk boundaries on record changes
@@ -121,5 +127,8 @@ def featurize(work, split: str, cand_path, out_path, chunk=1_500_000):
         parts.append(pair_features(cand.slice(a, b - a), rec, s1, stats))
         print(f"  features {b:,}/{cand.height:,} ({time.time() - t:.0f}s)", flush=True)
     out = pl.concat(parts)
+    sib = context.sibling_features(out.select(KEYS), rank1, rec)
+    out = out.join(sib, on=KEYS, how="left")
+    print(f"  sibling features ({time.time() - t:.0f}s)", flush=True)
     out.write_parquet(out_path)
     return out_path
