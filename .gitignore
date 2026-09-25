@@ -12,3 +12,5 @@ student_resource/
 *.tsv
 *.parquet
 kaggle_upload/
+teammate/
+AmazonML_project_snapshot_*.zip

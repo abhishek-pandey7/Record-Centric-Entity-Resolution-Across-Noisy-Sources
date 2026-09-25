@@ -16,8 +16,9 @@ def main():
     work = config.work_dir(a.work_dir)
     raw, norm = work / "raw", work / "norm"
     cand = pl.read_parquet(a.cand or work / "cand" / "train_val.parquet")
-    folds = pl.read_parquet(raw / "train_s1_folds.parquet")
-    val = folds.filter("is_val").select("s1", "country")
+    from .data import load_folds
+    folds = load_folds(raw)
+    val = folds.filter(pl.col("is_val") & ~pl.col("deleted")).select("s1", "country")
     truth = pl.read_parquet(raw / "train_gt_pairs.parquet").join(val.select("s1"), on="s1", how="semi")
     recs = pl.concat([pl.read_parquet(norm / f"train_s{s}.parquet",
                                       columns=["src", "rid", "is_indic", "addr_empty", "is_domain"]) for s in (2, 3)])

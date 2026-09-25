@@ -114,6 +114,10 @@ def run(work, split, queries, k, chunk=400_000):
     out_dir.mkdir(exist_ok=True)
     t = time.time()
     s1 = pl.read_parquet(norm / f"{split}_s1.parquet")
+    if split == "train" and config.DELETE_FRAC > 0:  # orphan world, see config.DELETE_FRAC
+        from .data import deleted_mask
+        s1 = s1.filter(~pl.Series(deleted_mask(s1["rid"].to_numpy())))
+        print(f"orphan world: S1 index {s1.height:,} after deleting {config.DELETE_FRAC:.0%}", flush=True)
     index = build_index(s1)
     print(f"index built: {sum(v.height for v in index.values()):,} postings ({time.time() - t:.0f}s)", flush=True)
     recs = pl.concat([pl.read_parquet(norm / f"{split}_s{s}.parquet") for s in (2, 3)])

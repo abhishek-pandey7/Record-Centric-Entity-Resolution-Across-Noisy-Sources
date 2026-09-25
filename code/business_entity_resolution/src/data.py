@@ -34,6 +34,22 @@ def stable_fold20(rid: np.ndarray) -> np.ndarray:
     return ((x >> np.uint64(40)) % np.uint64(config.N_FOLDS20)).astype(np.int8)
 
 
+def deleted_mask(s1: np.ndarray, frac: float = config.DELETE_FRAC) -> np.ndarray:
+    """Train S1s removed from the index to simulate test's orphan rate (independent of fold20)."""
+    x = s1.astype(np.uint64)
+    with np.errstate(over="ignore"):
+        x = (x ^ np.uint64(0x5DEECE66D)) * np.uint64(0xD6E8FEB86659FD93)
+        x = x ^ (x >> np.uint64(32))
+    return (x % np.uint64(10_000)).astype(np.int64) < int(frac * 10_000)
+
+
+def load_folds(raw) -> pl.DataFrame:
+    """Train S1 folds plus `deleted` (removed from the index in the orphan world).
+    Deleted S1s are not in the index, so they are never evaluated."""
+    f = pl.read_parquet(raw / "train_s1_folds.parquet")
+    return f.with_columns(pl.Series("deleted", deleted_mask(f["s1"].to_numpy())))
+
+
 def convert_records(ddir, raw):
     for split in config.SPLITS:
         for s in config.SOURCES:

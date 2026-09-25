@@ -12,7 +12,7 @@ import time
 import lightgbm as lgb
 import polars as pl
 
-from . import config, decide, features, metric
+from . import config, data, decide, features, metric
 
 KEYS = features.KEYS
 PARAMS = dict(objective="binary", learning_rate=0.05, num_leaves=127, min_data_in_leaf=100, feature_fraction=0.8,
@@ -45,7 +45,7 @@ def main():
         sub.write_parquet(sub_path)
         features.featurize(work, "train", sub_path, fpath)
     df = label(pl.read_parquet(fpath), raw)
-    folds = pl.read_parquet(raw / "train_s1_folds.parquet")
+    folds = data.load_folds(raw)
     df = df.join(folds.select("s1", "is_val"), on="s1")
     fcols = [c for c in df.columns if c not in KEYS + ["y", "is_val"]]
     tr, va = df.filter(~pl.col("is_val")), df.filter("is_val")
@@ -64,7 +64,7 @@ def main():
 
     va = va.with_columns(pl.Series("p", model.predict(va.select(fcols).to_numpy())))
     va.select(KEYS + ["p", "y"]).write_parquet(model_dir / "val_pred_stage1.parquet")
-    ents = folds.filter("is_val").select("s1", "country")
+    ents = folds.filter(pl.col("is_val") & ~pl.col("deleted")).select("s1", "country")
     truth = pl.read_parquet(raw / "train_gt_pairs.parquet").join(ents.select("s1"), on="s1", how="semi")
     thr, best, table = decide.sweep(va.select(KEYS + ["p"]), truth, ents)
     pe = metric.per_entity(decide.apply_threshold(va.select(KEYS + ["p"]), thr), truth, ents)
