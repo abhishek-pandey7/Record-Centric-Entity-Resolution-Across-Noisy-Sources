@@ -27,7 +27,7 @@ def label(feat: pl.DataFrame, raw) -> pl.DataFrame:
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--work-dir"); ap.add_argument("--cand", required=True)
-    ap.add_argument("--max-train-pairs", type=int, default=0); ap.add_argument("--rounds", type=int, default=3000)
+    ap.add_argument("--max-train-pairs", type=int, default=0); ap.add_argument("--rounds", type=int, default=4000)
     ap.add_argument("--k", type=int, default=3, help="use candidates with rank <= k")
     ap.add_argument("--train-folds", type=int, default=4, help="train entities used: N of the 17 train folds")
     a = ap.parse_args()
