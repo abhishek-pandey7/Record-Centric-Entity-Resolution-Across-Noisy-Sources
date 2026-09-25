@@ -13,6 +13,17 @@ import polars as pl
 from . import blocking, config, decide, features, io_out
 
 
+def predict_chunked(model, df: pl.DataFrame, cols, chunk=2_000_000):
+    """Predict in float32 chunks with progress lines (avoids one huge silent float64 matrix)."""
+    import numpy as np
+    out, t = [], time.time()
+    for o in range(0, df.height, chunk):
+        x = df.slice(o, chunk).select(cols).to_numpy().astype(np.float32, copy=False)
+        out.append(model.predict(x))
+        print(f"  predicted {min(o + chunk, df.height):,}/{df.height:,} ({time.time() - t:.0f}s)", flush=True)
+    return np.concatenate(out)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--work-dir"); ap.add_argument("--data-dir"); ap.add_argument("--out-dir")
@@ -33,7 +44,7 @@ def main():
     meta = json.load(open(work / "model" / "stage1_meta.json"))
     model = lgb.Booster(model_file=str(work / "model" / "stage1.txt"))
     feat = pl.read_parquet(fpath)
-    feat = feat.with_columns(pl.Series("p", model.predict(feat.select(meta["features"]).to_numpy())))
+    feat = feat.with_columns(pl.Series("p", predict_chunked(model, feat, meta["features"])))
     thr = a.threshold if a.threshold is not None else meta["threshold"]
     matches = decide.apply_threshold(feat.select("src", "rid", "s1", "p"), thr)
     s1_ids = pl.read_parquet(work / "raw" / "test_s1.parquet", columns=["rid"])["rid"]

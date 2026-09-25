@@ -22,7 +22,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--data-dir", required=True); ap.add_argument("--work-dir", required=True)
     ap.add_argument("--out-dir", required=True)
-    ap.add_argument("--train-folds", type=int, default=6, help="train entities used: N of the 17 train folds")
+    ap.add_argument("--train-folds", type=int, default=12, help="train entities used: N of the 17 train folds")
     ap.add_argument("--k", type=int, default=3); ap.add_argument("--block-k", type=int, default=5)
     ap.add_argument("--workers", type=int, default=max(1, (os.cpu_count() or 2)))
     a = ap.parse_args()
@@ -36,6 +36,10 @@ def main():
     if not os.path.exists(os.path.join(a.work_dir, "model", "stage1.txt")):
         sh(["src.train", "--cand", cand, "--k", str(a.k), "--train-folds", str(a.train_folds)], env)
     sh(["src.predict", "--block-k", str(a.block_k), "--k", str(a.k)], env)
+    # keep the trained model with the outputs so later runs can reuse or inspect it
+    import shutil
+    for f in ("stage1.txt", "stage1_meta.json"):
+        shutil.copy(os.path.join(a.work_dir, "model", f), os.path.join(a.out_dir, f))
 
 
 if __name__ == "__main__":
