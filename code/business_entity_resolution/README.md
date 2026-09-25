@@ -1,4 +1,4 @@
-# Business Entity Resolution — reproducible pipeline
+# Business Entity Resolution: reproducible pipeline
 
 Links every Source 1 entity to its Source 2/3 records. Output: `matching_results.tsv` (scored) and
 `candidate_pairs.tsv` (the exact candidate set the model scores; matches are a subset).
@@ -12,7 +12,7 @@ Links every Source 1 entity to its Source 2/3 records. Output: `matching_results
 | 2. Record-centric blocking (7 hashed key types, top-K per record) | `src.blocking` | `cand/` |
 | 3. Pair features (rapidfuzz, IDF overlaps, numbers, context) | `src.features` | `feat/` |
 | 4. LightGBM pair classifier + val evaluation | `src.train` | `model/` |
-| 5. Decision layer (exclusivity + threshold) | `src.decide` | — |
+| 5. Decision layer (exclusivity + threshold) | `src.decide` | (in memory) |
 | 6. Test inference + writers + validator | `src.predict` | `--out-dir` |
 
 ## Run end-to-end

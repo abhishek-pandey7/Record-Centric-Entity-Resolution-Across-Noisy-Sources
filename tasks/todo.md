@@ -1,4 +1,4 @@
-# Task List — Business Entity Resolution (Amazon ML Challenge 2026)
+# Task List: Business Entity Resolution (Amazon ML Challenge 2026)
 
 Plan and rationale: `tasks/plan.md`. Deadline **27 Sep 2026, 23:59 IST**. 15 leaderboard submissions total (5/day).
 
@@ -12,7 +12,7 @@ Conventions used below:
 
 ---
 
-## Phase 0 — Foundation (Day 1 evening)
+## Phase 0: Foundation (Day 1 evening)
 
 ### Task 1: Data layer, exact metric, entity split, output writers
 
@@ -87,7 +87,7 @@ Conventions used below:
 
 ---
 
-## Phase 1 — Thin end-to-end slice → Submission #1 (Day 1 night → Day 2 morning)
+## Phase 1: Thin end-to-end slice → Submission #1 (Day 1 night → Day 2 morning)
 
 ### Task 3: Blocking v1 (record-centric, multi-pass) + recall report
 
@@ -103,7 +103,7 @@ Why no single pass is enough: only 76–79% of Latin true pairs share a name tok
 Keep the pass flags, scores and ranks as features. `candidate_pairs.tsv` is this pool, inverted to one row per S1.
 
 **Acceptance criteria:**
-- [ ] On val, link recall is ≥ 97% (target 99%) — **got 95.5% @10 (Indic 70.6%, empty-address 74.9%); F0.5 ceiling 0.982 → Task 6 fixes Indic**, and the report covers:
+- [ ] On val, link recall is ≥ 97% (target 99%): **got 95.5% @10 (Indic 70.6%, empty-address 74.9%); F0.5 ceiling 0.982 → Task 6 fixes Indic**, and the report covers:
   - the entity-level F0.5 ceiling;
   - recall broken down by pass, country, Indic vs Latin name, empty address and zero-name-overlap.
 - [x] Mean candidates per S1 is ≤ 25, with the distribution and reduction ratio reported.
@@ -152,14 +152,14 @@ No country or id features. Train LightGBM (binary) on **all** candidates of the 
 
 **Estimated scope:** M
 
-### Checkpoint 1 — end-to-end works
+### Checkpoint 1: end-to-end works
 - [ ] `pytest` green; validator PASS; Submission #1 scored
 - [ ] Error analysis: 100 val FPs + 100 val FNs bucketed (blocking miss, DBA/zero-overlap, Indic, empty address, shared name → wrong branch, number truncation, typo). Phase 2 order re-ranked by bucket size.
 - [ ] Review with human before proceeding
 
 ---
 
-## Phase 2 — Metric levers (Day 2)
+## Phase 2: Metric levers (Day 2)
 
 ### Task 5: Decision layer v1 (calibration, singleton model, expected-F0.5)
 
@@ -256,14 +256,14 @@ Retrain LightGBM as stage 2.
 
 **Estimated scope:** M
 
-### Checkpoint 2 — best config chosen
+### Checkpoint 2: best config chosen
 - [ ] Every Phase 2 change kept only if val improves; each submission logged (config, val, LB)
 - [ ] France diagnostics acceptable
 - [ ] Review with human before scaling / GPU work
 
 ---
 
-## Phase 3 — Scale, optional GPU, finalize (Day 3)
+## Phase 3: Scale, optional GPU, finalize (Day 3)
 
 ### Task 9: Full-scale retrain + single-command reproducible run
 
@@ -320,7 +320,7 @@ Retrain LightGBM as stage 2.
 
 **Estimated scope:** S
 
-### Checkpoint 3 — complete
+### Checkpoint 3: complete
 - [ ] Final submission uploaded before 22:00 IST 27 Sep (buffer for portal issues)
 - [ ] Zip submitted; git tag `final`
 - [ ] All acceptance criteria met

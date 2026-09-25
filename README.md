@@ -1,6 +1,6 @@
 # One Business, Many Records
 
-**Record-Centric Entity Resolution Across Noisy Sources** — Amazon ML Challenge 2026.
+**Record-Centric Entity Resolution Across Noisy Sources** for the Amazon ML Challenge 2026.
 
 This project resolves business records from three noisy sources into real-world entities. Each record retrieves its likely owners via multi-key blocking, a LightGBM matcher scores the pairs, and the final decisions optimize F0.5. A transliteration dictionary learned from the training data handles Indic scripts, and country-agnostic features extend to France.
 

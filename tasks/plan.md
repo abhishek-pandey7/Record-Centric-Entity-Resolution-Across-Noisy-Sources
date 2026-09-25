@@ -90,12 +90,12 @@ T1 data + metric + split ─► T2 normalizer ─► T3 blocking ─► T4 featu
 
 ## Task list
 
-### Phase 0 — Foundation (Day 1 evening)
+### Phase 0: Foundation (Day 1 evening)
 - [ ] Task 1: Data layer, exact metric, entity split, output writers
 - [ ] Task P0 (optional): all-empty leaderboard probe → public-test singleton rate
 - [ ] Task 2: Normalizer v1 (country-agnostic core + EN/IN/FR dictionaries)
 
-### Phase 1 — Thin end-to-end slice (Day 1 night → Day 2 morning)
+### Phase 1: Thin end-to-end slice (Day 1 night → Day 2 morning)
 - [ ] Task 3: Blocking v1 (record-centric, multi-pass) + recall report
 - [ ] Task 4: Pairwise features + LightGBM v1 + writers → **Submission #1**
 
@@ -103,7 +103,7 @@ T1 data + metric + split ─► T2 normalizer ─► T3 blocking ─► T4 featu
 - [ ] Tests green, validator PASS, Submission #1 scored, |LB − val| explained
 - [ ] FP/FN error buckets decide the Phase 2 order; human review
 
-### Phase 2 — Metric levers (Day 2)
+### Phase 2: Metric levers (Day 2)
 - [ ] Task 5: Decision layer (calibration + singleton model + expected F0.5)
 - [ ] Task 6: Indic back-transliteration
 - [ ] Task 7: Stage-2 context model (OOF)
@@ -112,7 +112,7 @@ T1 data + metric + split ─► T2 normalizer ─► T3 blocking ─► T4 featu
 ### Checkpoint 2
 - [ ] Each change kept only if val improves; submissions 2–5 logged; France diagnostics OK; human review
 
-### Phase 3 — Scale, optional GPU, finalize (Day 3)
+### Phase 3: Scale, optional GPU, finalize (Day 3)
 - [ ] Task 9: Full-scale retrain + single-command reproducible run
 - [ ] Task 10 (optional): GPU dense retrieval or a cross-encoder feature, only if Checkpoint 2 shows headroom
 - [ ] Task 11: Final selection + submission zip + documentation
