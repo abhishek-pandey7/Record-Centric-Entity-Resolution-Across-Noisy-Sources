@@ -12,4 +12,4 @@ Public LB = subset of test; private LB decides ranking. Each upload should test 
 | 04 | 2026-09-26 | v4: number-edit features, no siblings, 12 folds | commit d082a97 | 0.97726 | not submitted | Clean: 1.35% incompatible numbers; +73k/-41k links vs v2. Scores saved in `submissions/sub04_v4/` |
 | 05 | 2026-09-26 | v4 + decision rules (never-added word p>=0.97, legal conflict p>=0.97, overlap p>=0.9) | local, `v4_rules.py` | 0.97844 | _pending_ | `submissions/sub05_v4rules/matching_results.tsv`, validator PASS |
 | 06 | 2026-09-26 | v5: + legal-type and never-added-word features | commit b47f6af | 0.97949 | not submitted | `submissions/sub06_v5/` (scores saved), validator PASS |
-| 07 | 2026-09-26 | v5 + decision rules (thr 0.7, conflict>=0.9, overlap>=0.8, never>=0.97) | local, `v5_rules.py` | 0.97980 | _pending_ | **best so far**, `submissions/sub07_v5rules/matching_results.tsv`, validator PASS |
+| 07 | 2026-09-26 | v5 + decision rules (thr 0.7, conflict>=0.9, overlap>=0.8, never>=0.97) | local, `v5_rules.py` | 0.97980 | **0.972** (as "v5") | **best so far**, `submissions/sub07_v5rules/matching_results.tsv`, validator PASS |
