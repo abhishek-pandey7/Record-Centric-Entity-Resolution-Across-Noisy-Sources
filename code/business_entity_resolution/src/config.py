@@ -37,3 +37,7 @@ def out_dir(arg=None) -> Path:
     p = Path(arg or os.environ.get("BER_OUT_DIR") or REPO_ROOT / "output")
     p.mkdir(parents=True, exist_ok=True)
     return p
+
+# Sibling-context features help on validation but backfire on test: decoy near-copy records come in groups
+# that point at the same S1 and "support" each other (v3 added ~280k number-shifted decoy links). Off by default.
+USE_SIBLING = False

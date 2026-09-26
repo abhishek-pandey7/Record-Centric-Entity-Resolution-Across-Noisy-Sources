@@ -127,8 +127,10 @@ def featurize(work, split: str, cand_path, out_path, full_cand_path=None, chunk=
         parts.append(pair_features(cand.slice(a, b - a), rec, s1, stats))
         print(f"  features {b:,}/{cand.height:,} ({time.time() - t:.0f}s)", flush=True)
     out = pl.concat(parts)
-    sib = context.sibling_features(out.select(KEYS), rank1, rec)
-    out = out.join(sib, on=KEYS, how="left")
-    print(f"  sibling features ({time.time() - t:.0f}s)", flush=True)
+    from . import config
+    if config.USE_SIBLING:
+        sib = context.sibling_features(out.select(KEYS), rank1, rec)
+        out = out.join(sib, on=KEYS, how="left")
+        print(f"  sibling features ({time.time() - t:.0f}s)", flush=True)
     out.write_parquet(out_path)
     return out_path

@@ -35,7 +35,7 @@ def main():
     if not cand_path.exists():
         blocking.run(work, "test", "all", a.block_k)
     # Same candidate definition as training: top-block_k context features, pairs with rank <= k.
-    fpath = work / "feat" / f"test_v3_k{a.k}.parquet"
+    fpath = work / "feat" / f"test_v4_k{a.k}.parquet"
     if not fpath.exists():
         (work / "feat").mkdir(exist_ok=True)
         sub_path = work / "cand" / f"test_k{a.k}.parquet"
@@ -45,6 +45,8 @@ def main():
     model = lgb.Booster(model_file=str(work / "model" / "stage1.txt"))
     feat = pl.read_parquet(fpath)
     feat = feat.with_columns(pl.Series("p", predict_chunked(model, feat, meta["features"])))
+    # keep every scored pair so decisions (threshold, rules) can be re-made offline without re-running
+    feat.select("src", "rid", "s1", "p", "num1_rel", "num_best_rel", "rank").write_parquet(out / "test_scores.parquet")
     thr = a.threshold if a.threshold is not None else meta["threshold"]
     matches = decide.apply_threshold(feat.select("src", "rid", "s1", "p"), thr)
     s1_ids = pl.read_parquet(work / "raw" / "test_s1.parquet", columns=["rid"])["rid"]
