@@ -70,6 +70,64 @@ def legal_relation(r_legal: list, e_legal: list) -> pl.DataFrame:
                          "e_legal_n": pl.Series(e_n, dtype=pl.Int8)})
 
 
+ADDED_FIT_FOLDS = (15, 16)   # fold20 values never used for training (folds 3..14) or validation (0..2)
+
+
+def _added_vocab(r_name: str, e_name: str, vocab: set) -> list:
+    """Record words that are real business vocabulary, absent from the S1 name, and not a typo / split of an S1 word."""
+    r_t, e_t = r_name.split(), e_name.split()
+    out = None
+    for t in r_t:
+        if t in e_t or t not in vocab or t.isdigit():
+            continue
+        miss = [m for m in e_t if m not in r_t]
+        if any(Levenshtein.distance(t, m) <= max(1, len(m) // 4) for m in miss):
+            continue
+        if any((t in m or m in t) for m in e_t if len(m) >= 4 and len(t) >= 4):
+            continue
+        out = out or []
+        out.append(t)
+    return out or []
+
+
+def fit_added_words(work, min_df=30) -> dict:
+    """Which vocabulary words do TRUE records add to the S1 name? Decoys add descriptor words ('solutions',
+    'holdings', 'exports', ...) that true records never add: 1.5M candidate pairs with such a word are 0.01% positive.
+    Learned on held-out folds so the feature is not trivially separating on the training folds."""
+    import json
+    from collections import Counter
+    from .data import load_folds
+    path = work / "norm" / "added_words.json"
+    if path.exists():
+        return json.loads(path.read_text(encoding="utf-8"))
+    raw, norm = work / "raw", work / "norm"
+    s1 = pl.read_parquet(norm / "train_s1.parquet", columns=["rid", "name_norm"])
+    df = s1.select(pl.col("name_norm").str.split(" ").list.unique().alias("t")).explode("t", empty_as_null=True).group_by("t").len()
+    vocab = set(df.filter(pl.col("len") >= min_df)["t"].drop_nulls().to_list())
+    fit = load_folds(raw).filter(pl.col("fold20").is_in(list(ADDED_FIT_FOLDS))).select("s1")
+    gt = pl.read_parquet(raw / "train_gt_pairs.parquet").join(fit, on="s1", how="semi")
+    recs = pl.concat([pl.read_parquet(norm / f"train_s{s}.parquet", columns=["src", "rid", "name_norm"]) for s in (2, 3)])
+    t = gt.join(s1.rename({"rid": "s1", "name_norm": "e_name"}), on="s1").join(recs, on=["src", "rid"])
+    cnt = Counter()
+    for rn, en in zip(t["name_norm"].to_list(), t["e_name"].to_list()):
+        cnt.update(_added_vocab(rn, en, vocab))
+    table = {"vocab": sorted(vocab), "true_add": dict(cnt), "n_pairs": t.height}
+    path.write_text(json.dumps(table), encoding="utf-8")
+    print(f"  added-word table: {len(vocab):,} vocab words, {t.height:,} held-out true pairs", flush=True)
+    return table
+
+
+def added_word_features(r_names: list, e_names: list, table: dict) -> pl.DataFrame:
+    vocab, true_add = set(table["vocab"]), table["true_add"]
+    never, rare, added = [], [], []
+    for rn, en in zip(r_names, e_names):
+        a = _added_vocab(rn, en, vocab)
+        c = [true_add.get(w, 0) for w in a]
+        never.append(sum(x == 0 for x in c)); rare.append(sum(x <= 3 for x in c)); added.append(len(a))
+    return pl.DataFrame({"n_never_added": pl.Series(never, dtype=pl.Int8), "n_rare_added": pl.Series(rare, dtype=pl.Int8),
+                         "n_vocab_added": pl.Series(added, dtype=pl.Int8)})
+
+
 def sibling_features(pairs: pl.DataFrame, rank1: pl.DataFrame, rec: pl.DataFrame, n_chunks=8) -> pl.DataFrame:
     """pairs: src, rid, s1 (rows to featurize). rank1: src, rid, s1 for every record's top candidate
     (full pool). rec: normalized records (src, rid, name_norm, addr_norm, nums)."""

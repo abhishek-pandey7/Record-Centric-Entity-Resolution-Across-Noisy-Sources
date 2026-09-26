@@ -56,7 +56,7 @@ def _set_feats(df, a, b, prefix, idf, idf_col):
     return df.drop("_ta", "_tb", "_ti", "_row", "_mi", "_mb", "_ma")
 
 
-def pair_features(c: pl.DataFrame, rec: pl.DataFrame, s1: pl.DataFrame, stats) -> pl.DataFrame:
+def pair_features(c: pl.DataFrame, rec: pl.DataFrame, s1: pl.DataFrame, stats, added_table=None) -> pl.DataFrame:
     """c: candidates (src, rid, s1, score, nkeys, types, rank). rec/s1: normalized tables."""
     idf_n, idf_a, common = stats
     df = (c.join(rec.select(NORM_COLS), on=["src", "rid"], how="left")
@@ -96,6 +96,8 @@ def pair_features(c: pl.DataFrame, rec: pl.DataFrame, s1: pl.DataFrame, stats) -
     df = df.join(common.rename({"name_norm": "e_name_norm", "country": "e_country"}), on=["e_country", "e_name_norm"], how="left")
     df = pl.concat([df, context.number_features(df["nums"].to_list(), df["e_nums"].to_list()),
                     context.legal_relation(df["legal"].to_list(), df["e_legal"].to_list())], how="horizontal")
+    if added_table is not None:
+        df = pl.concat([df, context.added_word_features(df["name_norm"].to_list(), df["e_name_norm"].to_list(), added_table)], how="horizontal")
     feats = [k for k in df.columns if k not in NORM_COLS and not k.startswith("e_") and not k.startswith("_")
              and k not in ("s1",)] + ["name_common", "is_domain", "is_indic", "addr_empty"]
     return df.select(KEYS + [k for k in dict.fromkeys(feats) if k not in KEYS])
@@ -110,6 +112,7 @@ def featurize(work, split: str, cand_path, out_path, full_cand_path=None, chunk=
     cand = pl.read_parquet(cand_path).sort("src", "rid", "rank")
     s1 = pl.read_parquet(norm / f"{split}_s1.parquet")
     stats = s1_stats(s1)
+    added_table = context.fit_added_words(work)
     rank1 = (pl.read_parquet(full_cand_path or cand_path, columns=["src", "rid", "s1", "rank"])
              .filter(pl.col("rank") == 1).drop("rank").join(cand.select("s1").unique(), on="s1", how="semi"))
     need = pl.concat([cand.select("src", "rid"), rank1.select("src", "rid")]).unique()
@@ -125,7 +128,7 @@ def featurize(work, split: str, cand_path, out_path, full_cand_path=None, chunk=
         bounds.append((start, end)); start = end
     parts = []
     for i, (a, b) in enumerate(bounds):
-        parts.append(pair_features(cand.slice(a, b - a), rec, s1, stats))
+        parts.append(pair_features(cand.slice(a, b - a), rec, s1, stats, added_table))
         print(f"  features {b:,}/{cand.height:,} ({time.time() - t:.0f}s)", flush=True)
     out = pl.concat(parts)
     from . import config
