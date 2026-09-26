@@ -94,7 +94,8 @@ def pair_features(c: pl.DataFrame, rec: pl.DataFrame, s1: pl.DataFrame, stats) -
         (pl.col("src") == 3).cast(pl.Int8).alias("is_s3"),
     )
     df = df.join(common.rename({"name_norm": "e_name_norm", "country": "e_country"}), on=["e_country", "e_name_norm"], how="left")
-    df = pl.concat([df, context.number_features(df["nums"].to_list(), df["e_nums"].to_list())], how="horizontal")
+    df = pl.concat([df, context.number_features(df["nums"].to_list(), df["e_nums"].to_list()),
+                    context.legal_relation(df["legal"].to_list(), df["e_legal"].to_list())], how="horizontal")
     feats = [k for k in df.columns if k not in NORM_COLS and not k.startswith("e_") and not k.startswith("_")
              and k not in ("s1",)] + ["name_common", "is_domain", "is_indic", "addr_empty"]
     return df.select(KEYS + [k for k in dict.fromkeys(feats) if k not in KEYS])

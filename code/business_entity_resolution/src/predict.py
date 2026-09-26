@@ -35,7 +35,7 @@ def main():
     if not cand_path.exists():
         blocking.run(work, "test", "all", a.block_k)
     # Same candidate definition as training: top-block_k context features, pairs with rank <= k.
-    fpath = work / "feat" / f"test_v4_k{a.k}.parquet"
+    fpath = work / "feat" / f"test_v5_k{a.k}.parquet"
     if not fpath.exists():
         (work / "feat").mkdir(exist_ok=True)
         sub_path = work / "cand" / f"test_k{a.k}.parquet"

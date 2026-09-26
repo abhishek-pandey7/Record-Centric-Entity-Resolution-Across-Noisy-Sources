@@ -35,7 +35,7 @@ def main():
     raw, feat_dir, model_dir = work / "raw", work / "feat", work / "model"
     feat_dir.mkdir(exist_ok=True); model_dir.mkdir(exist_ok=True)
     t = time.time()
-    fpath = feat_dir / f"train_v4_k{a.k}_tf{a.train_folds}.parquet"
+    fpath = feat_dir / f"train_v5_k{a.k}_tf{a.train_folds}.parquet"
     if not fpath.exists():
         # Keep val entities in full + a fraction of train entities (folds 3..3+train_folds-1 of 20).
         folds0 = pl.read_parquet(raw / "train_s1_folds.parquet")

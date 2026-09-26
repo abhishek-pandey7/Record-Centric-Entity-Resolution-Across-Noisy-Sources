@@ -52,6 +52,24 @@ def number_features(r_nums: list, e_nums: list) -> pl.DataFrame:
                          "num_min_dist": pl.Series(min_dist, dtype=pl.Int16), "num_n_extra": pl.Series(n_extra, dtype=pl.Int16)})
 
 
+LEGAL_CLASS = {"llc": "LLC", "inc": "INC", "corp": "INC", "co": "CO", "ltd": "LTD", "pvt": "LTD", "public": "PUB",
+               "llp": "LLP", "lp": "LP", "plc": "PLC", "pllc": "PLLC", "pc": "PC", "pa": "PC"}
+
+
+def legal_relation(r_legal: list, e_legal: list) -> pl.DataFrame:
+    """Decoys switch the legal TYPE (Inc->LLC, Limited->LLP) while true noise keeps an equivalent form (Ltd/Limited).
+    legal_rel: 0 same class / one side missing, 1 partial overlap, 2 conflicting classes. On validation, accepted
+    pairs with a conflict are 28% false vs ~1% otherwise."""
+    rel, r_n, e_n = [], [], []
+    for a, b in zip(r_legal, e_legal):
+        A = {LEGAL_CLASS.get(t, t) for t in a.split()} if a else set()
+        B = {LEGAL_CLASS.get(t, t) for t in b.split()} if b else set()
+        rel.append(0 if (not A or not B or A == B) else (1 if A & B else 2))
+        r_n.append(len(A)); e_n.append(len(B))
+    return pl.DataFrame({"legal_rel": pl.Series(rel, dtype=pl.Int8), "r_legal_n": pl.Series(r_n, dtype=pl.Int8),
+                         "e_legal_n": pl.Series(e_n, dtype=pl.Int8)})
+
+
 def sibling_features(pairs: pl.DataFrame, rank1: pl.DataFrame, rec: pl.DataFrame, n_chunks=8) -> pl.DataFrame:
     """pairs: src, rid, s1 (rows to featurize). rank1: src, rid, s1 for every record's top candidate
     (full pool). rec: normalized records (src, rid, name_norm, addr_norm, nums)."""
