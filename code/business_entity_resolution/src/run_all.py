@@ -18,6 +18,15 @@ def sh(args, env):
     print(f"=== done in {time.time() - t:.0f}s", flush=True)
 
 
+def save_model(a):
+    """Copy the trained model into the output dir right away, so a later crash cannot lose it."""
+    import shutil
+    os.makedirs(a.out_dir, exist_ok=True)
+    for f in ("stage1.txt", "stage1_meta.json"):
+        shutil.copy(os.path.join(a.work_dir, "model", f), os.path.join(a.out_dir, f))
+    print(f"=== model saved to {a.out_dir}", flush=True)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--data-dir", required=True); ap.add_argument("--work-dir", required=True)
@@ -35,11 +44,9 @@ def main():
         sh(["src.blocking", "--split", "train", "--queries", "all", "--k", str(a.block_k)], env)
     if not os.path.exists(os.path.join(a.work_dir, "model", "stage1.txt")):
         sh(["src.train", "--cand", cand, "--k", str(a.k), "--train-folds", str(a.train_folds)], env)
+    save_model(a)
     sh(["src.predict", "--block-k", str(a.block_k), "--k", str(a.k)], env)
-    # keep the trained model with the outputs so later runs can reuse or inspect it
-    import shutil
-    for f in ("stage1.txt", "stage1_meta.json"):
-        shutil.copy(os.path.join(a.work_dir, "model", f), os.path.join(a.out_dir, f))
+
 
 
 if __name__ == "__main__":
